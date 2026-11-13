@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'core/colors.dart';
 import 'core/routes.dart';
 import 'core/strings.dart';
-import 'core/text_styles.dart';
-import 'ui/register_screen.dart';
-import 'ui/welcome_screen.dart';
+import '../ui/login_screen.dart';
+import '../ui/register_screen.dart';
+import '../ui/welcome_screen.dart';
 
 void main() {
   runApp(const LanguageSchoolApp());
@@ -31,36 +31,8 @@ class LanguageSchoolApp extends StatelessWidget {
       home: const WelcomeScreen(),
       routes: {
         AppRoutes.register: (context) => const RegisterScreen(),
-        AppRoutes.login: (context) => const PlaceholderScreen(
-          title: AppStrings.authTitle,
-        ),
+        AppRoutes.login: (context) => const LoginScreen(),
       },
-    );
-  }
-}
-
-class PlaceholderScreen extends StatelessWidget {
-  final String title;
-
-  const PlaceholderScreen({
-    super.key,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.pureWhite,
-      ),
-      body: Center(
-        child: Text(
-          '$title${AppStrings.comingSoonSuffix}',
-          style: AppStyles.placeholderText,
-        ),
-      ),
     );
   }
 }

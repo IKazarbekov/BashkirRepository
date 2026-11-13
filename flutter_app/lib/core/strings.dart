@@ -48,4 +48,14 @@ class AppStrings {
   static const String errorInvalidEmail = 'Введите корректный email';
   static const String errorShortPassword = 'Пароль должен быть не менее 6 символов';
   static const String errorPasswordMismatch = 'Пароли не совпадают';
+
+  // Поля и сообщения авторизации
+  static const String loginLabel = 'Логин';
+  static const String loginHint = 'Введите ваш логин';
+  static const String loginSuccess = 'Вход выполнен успешно!';
+  static const String noAccount = 'Нет аккаунта? ';
+  // Уведомления
+  static const String registerSuccessTitle = 'Регистрация завершена!';
+  static const String registerSuccessMessage =
+      'Аккаунт успешно создан. Теперь вы можете войти в систему.';
 }

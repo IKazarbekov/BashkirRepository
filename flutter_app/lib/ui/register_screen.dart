@@ -4,10 +4,10 @@ import '../core/dimens.dart';
 import '../core/routes.dart';
 import '../core/strings.dart';
 import '../core/text_styles.dart';
+import '../services/auth_service.dart';
 import 'widgets/app_button.dart';
 import 'widgets/app_text_field.dart';
-
-// ... остальной код RegisterScreen без изменений ...
+import 'widgets/app_snack_bar.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,32 +18,53 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _authService = AuthService();
+
+  final _loginController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  bool _isLoading = false;
+
   @override
   void dispose() {
-    _nameController.dispose();
+    _loginController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AppStrings.welcomeUserPrefix}${_nameController.text}!',
-          ),
-          backgroundColor: AppColors.accentGreen,
-        ),
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final result = await _authService.register(
+      login: _loginController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success'] == true) {
+      AppSnackBar.showSuccess(
+        context,
+        title: AppStrings.registerSuccessTitle,
+        message: AppStrings.registerSuccessMessage,
+      );
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+    } else {
+      AppSnackBar.showError(
+        context,
+        message: result['message'],
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -81,10 +102,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildHeader(),
                     const SizedBox(height: AppDimens.space30),
                     AppTextField(
-                      label: AppStrings.nameLabel,
-                      hint: AppStrings.nameHint,
+                      label: AppStrings.loginLabel,
+                      hint: AppStrings.loginHint,
                       prefixIcon: Icons.person_outline_rounded,
-                      controller: _nameController,
+                      controller: _loginController,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return AppStrings.errorEmptyField;
@@ -138,7 +159,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     const SizedBox(height: AppDimens.space28),
-                    AppButton(
+                    _isLoading
+                        ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBlue,
+                      ),
+                    )
+                        : AppButton(
                       text: AppStrings.createAccountButton,
                       onPressed: _submitForm,
                     ),
