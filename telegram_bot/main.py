@@ -42,6 +42,9 @@ async def start(message: Message):
 # ---------- регистрация ----------
 @dp.message(Command("register"))
 async def reg_start(message: Message, state: FSMContext):
+    if message.from_user.id in sessions:
+        await message.answer("Ты уже вошёл в аккаунт. Чтобы создать новый, сначала выйди: /logout")
+        return
     await state.set_state(Reg.username)
     await message.answer("Придумай имя пользователя:")
 
@@ -74,6 +77,9 @@ async def reg_password(message: Message, state: FSMContext):
 # ---------- вход ----------
 @dp.message(Command("login"))
 async def login_start(message: Message, state: FSMContext):
+    if message.from_user.id in sessions:
+        await message.answer("Ты уже вошёл в аккаунт. Чтобы войти в другой, сначала выйди: /logout")
+        return
     await state.set_state(Login.username)
     await message.answer("Введи имя пользователя:")
 
