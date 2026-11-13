@@ -42,6 +42,9 @@ async def start(message: Message):
 # ---------- регистрация ----------
 @dp.message(Command("register"))
 async def reg_start(message: Message, state: FSMContext):
+    if message.from_user.id in sessions:
+        await message.answer("Ты уже вошёл в аккаунт. Чтобы создать новый, сначала выйди: /logout")
+        return
     await state.set_state(Reg.username)
     await message.answer("Придумай имя пользователя:")
 
@@ -74,6 +77,9 @@ async def reg_password(message: Message, state: FSMContext):
 # ---------- вход ----------
 @dp.message(Command("login"))
 async def login_start(message: Message, state: FSMContext):
+    if message.from_user.id in sessions:
+        await message.answer("Ты уже вошёл в аккаунт. Чтобы войти в другой, сначала выйди: /logout")
+        return
     await state.set_state(Login.username)
     await message.answer("Введи имя пользователя:")
 
@@ -94,7 +100,7 @@ async def login_password(message: Message, state: FSMContext):
     await state.clear()
     ok, info = await auth_api.login(data["username"], password, message.from_user.id)
     if ok:
-        sessions[message.from_user.id] = info
+        sessions[message.from_user.id] = {"username": data["username"], "token": info}
         await message.answer(f"✅ Ты вошёл как {data['username']}")
     else:
         await message.answer(f"❌ {info}")
@@ -103,8 +109,9 @@ async def login_password(message: Message, state: FSMContext):
 # ---------- прочее ----------
 @dp.message(Command("me"))
 async def me(message: Message):
-    if message.from_user.id in sessions:
-        await message.answer("Ты авторизован ✅")
+    session = sessions.get(message.from_user.id)
+    if session:
+        await message.answer(f"Ты авторизован ✅, твоё имя пользователя: {session['username']}")
     else:
         await message.answer("Ты не вошёл. Используй /login")
 
