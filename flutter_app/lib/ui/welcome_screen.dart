@@ -4,7 +4,7 @@ import '../core/dimens.dart';
 import '../core/routes.dart';
 import '../core/strings.dart';
 import '../core/text_styles.dart';
-import 'widgets/button.dart';
+import 'widgets/app_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
