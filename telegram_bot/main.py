@@ -20,6 +20,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+print("API_URL =", os.getenv("API_URL"))
+
 from bot.services import auth_api, images_api, lessons_api  # после load_dotenv, чтобы подхватить .env
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
