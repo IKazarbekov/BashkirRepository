@@ -1,30 +1,36 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dualingo_bashkir/ui/main.dart';
+import 'package:dualingo_bashkir/data/lessons.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('The first screen asks users to sign in', (tester) async {
     await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    expect(find.text('Войти'), findsWidgets);
+    expect(find.text('Регистрация'), findsOneWidget);
+    expect(find.text('Имя пользователя'), findsOneWidget);
+    expect(find.text('Пароль'), findsOneWidget);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Registration tab shows the create-account action', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Регистрация'));
+    await tester.pumpAndSettle();
+    expect(find.text('Создать аккаунт'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('Every exercise has content that can be pronounced', () {
+    for (final lesson in lessons) {
+      for (final question in lesson.exercises) {
+        expect(question.spokenText.isNotEmpty, isTrue);
+      }
+    }
   });
 }
