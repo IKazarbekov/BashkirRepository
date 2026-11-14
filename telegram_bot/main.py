@@ -14,6 +14,7 @@ from aiogram.types import (
     Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
+    WebAppInfo,
 )
 from dotenv import load_dotenv
 
@@ -23,6 +24,7 @@ from bot.services import auth_api, images_api, lessons_api  # после load_do
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
+SITE_URL = os.getenv("SITE_URL", "")
 
 # telegram_id -> {"username", "token", "user_id", "step", "history"}
 sessions: dict[int, dict] = {}
@@ -77,7 +79,7 @@ async def start(message: Message, state: FSMContext):
     await message.answer(
         "Сәләм! Я бот для изучения башкирского языка.\n\n"
         "Пользуйся кнопками внизу или командами:\n"
-        "/register, /login, /me, /task, /history, /logout",
+        "/register, /login, /me, /task, /history, /logout, /site",
         reply_markup=main_kb(message.from_user.id),
     )
 
@@ -200,6 +202,14 @@ def normalize(text: str) -> str:
     cleaned = "".join(ch for ch in text.lower() if ch.isalnum() or ch.isspace())
     return " ".join(cleaned.split())
 
+def needs_answer(step: dict) -> bool:
+    """Шаг с заполненным answer_text нужно выполнить, пропустить нельзя."""
+    return bool(str(step.get("answer_text") or "").strip())
+
+
+def task_markup(step: dict):
+    """Для обязательных шагов кнопки нет, для остальных есть «Пропустить»."""
+    return ReplyKeyboardRemove() if needs_answer(step) else task_kb
 
 def finish_step(session: dict, status: str):
     """Помечает текущий шаг завершённым и кладёт в историю."""
@@ -241,7 +251,7 @@ async def send_next_task(message: Message, state: FSMContext, session: dict):
 
     session["step"] = {"id": step["step_id"], "answered": False, "data": step}
     await state.set_state(TaskState.waiting_answer)
-    await send_step(message, step, markup=task_kb)  # во время задания видна только «Пропустить»
+    await send_step(message, step, markup=task_markup(step))
 
 
 @dp.message(Command("task"))
@@ -260,7 +270,7 @@ async def task(message: Message, state: FSMContext):
         # ещё не ответил, показываем то же задание
         await message.answer("Ты ещё не ответил на это задание:")
         await state.set_state(TaskState.waiting_answer)
-        await send_step(message, current["data"], markup=task_kb)
+        await send_step(message, current["data"], markup=task_markup(current["data"]))
     else:
         await send_next_task(message, state, session)
 
@@ -276,6 +286,10 @@ async def skip(message: Message, state: FSMContext):
     current = session["step"]
     if not current or current["answered"]:
         await message.answer("Сейчас нечего пропускать.", reply_markup=menu_kb)
+        return
+
+    if needs_answer(current["data"]):
+        await message.answer("Это задание нужно выполнить, пропустить его нельзя. Напиши ответ.")
         return
 
     if SKIP_MARKS_BACKEND:
@@ -366,6 +380,18 @@ async def history_nav(callback: CallbackQuery):
 async def noop(callback: CallbackQuery):
     await callback.answer()
 
+@dp.message(Command("site"))
+async def site(message: Message):
+    if not SITE_URL.startswith("https://"):
+        await message.answer("Адрес сайта не настроен (нужен https в SITE_URL).")
+        return
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="🌐 Открыть приложение", web_app=WebAppInfo(url=SITE_URL))
+    ]])
+    await message.answer(
+        "Нажми кнопку ниже, чтобы открыть приложение.",
+        reply_markup=kb,
+    )
 
 # ---------- запуск ----------
 async def main():
