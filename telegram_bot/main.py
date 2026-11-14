@@ -204,6 +204,14 @@ def normalize(text: str) -> str:
     cleaned = "".join(ch for ch in text.lower() if ch.isalnum() or ch.isspace())
     return " ".join(cleaned.split())
 
+def needs_answer(step: dict) -> bool:
+    """Шаг с заполненным answer_text нужно выполнить, пропустить нельзя."""
+    return bool(str(step.get("answer_text") or "").strip())
+
+
+def task_markup(step: dict):
+    """Для обязательных шагов кнопки нет, для остальных есть «Пропустить»."""
+    return ReplyKeyboardRemove() if needs_answer(step) else task_kb
 
 def finish_step(session: dict, status: str):
     """Помечает текущий шаг завершённым и кладёт в историю."""
@@ -245,7 +253,7 @@ async def send_next_task(message: Message, state: FSMContext, session: dict):
 
     session["step"] = {"id": step["step_id"], "answered": False, "data": step}
     await state.set_state(TaskState.waiting_answer)
-    await send_step(message, step, markup=task_kb)  # во время задания видна только «Пропустить»
+    await send_step(message, step, markup=task_markup(step))
 
 
 @dp.message(Command("task"))
@@ -264,7 +272,7 @@ async def task(message: Message, state: FSMContext):
         # ещё не ответил, показываем то же задание
         await message.answer("Ты ещё не ответил на это задание:")
         await state.set_state(TaskState.waiting_answer)
-        await send_step(message, current["data"], markup=task_kb)
+        await send_step(message, current["data"], markup=task_markup(current["data"]))
     else:
         await send_next_task(message, state, session)
 
@@ -280,6 +288,10 @@ async def skip(message: Message, state: FSMContext):
     current = session["step"]
     if not current or current["answered"]:
         await message.answer("Сейчас нечего пропускать.", reply_markup=menu_kb)
+        return
+
+    if needs_answer(current["data"]):
+        await message.answer("Это задание нужно выполнить, пропустить его нельзя. Напиши ответ.")
         return
 
     if SKIP_MARKS_BACKEND:
