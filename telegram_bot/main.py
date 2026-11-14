@@ -1,32 +1,31 @@
-import asyncio
-import os
-
+import asyncio, os
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
+from bot.services import auth_api  # после load_dotenv, чтобы подхватить .env
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from bot.services import auth_api  # после load_dotenv, чтобы подхватить .env
-
+TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("BOT_TOKEN не найден в .env")
+else:
+    print("Токен бота обнаружен. Запуск...")
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
 
-sessions: dict[int, str] = {}  # telegram_id -> токен (пока в памяти)
-
+sessions: dict[int, str] = {}
 
 class Reg(StatesGroup):
     username = State()
     password = State()
 
-
 class Login(StatesGroup):
     username = State()
     password = State()
-
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -37,7 +36,6 @@ async def start(message: Message):
         "/me — кто я\n"
         "/logout — выйти"
     )
-
 
 # ---------- регистрация ----------
 @dp.message(Command("register"))

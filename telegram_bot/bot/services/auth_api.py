@@ -2,7 +2,7 @@ import os
 
 import httpx
 
-API_URL = os.getenv("API_URL", "http://10.161.85.19:8000")
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
 def _parse(r: httpx.Response):
@@ -11,7 +11,6 @@ def _parse(r: httpx.Response):
         return r.json()
     except ValueError:
         return r.text
-
 
 async def _post(path: str, username: str, password: str):
     try:
@@ -25,9 +24,8 @@ async def _post(path: str, username: str, password: str):
     except httpx.TimeoutException:
         return "Сервер не ответил вовремя"
 
-
 async def register(username: str, password: str, telegram_id: int) -> tuple[bool, str]:
-    r = await _post("/register", username, password)
+    r = await _post("/user/reg", username, password)
     if isinstance(r, str):  # пришла ошибка соединения
         return False, r
 
@@ -37,9 +35,8 @@ async def register(username: str, password: str, telegram_id: int) -> tuple[bool
         return True, str(_parse(r))
     return False, f"Не удалось зарегистрироваться (код {r.status_code})"
 
-
 async def login(username: str, password: str, telegram_id: int) -> tuple[bool, str]:
-    r = await _post("/login", username, password)
+    r = await _post("/user/log", username, password)
     if isinstance(r, str):
         return False, r
 
