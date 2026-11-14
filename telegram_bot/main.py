@@ -14,6 +14,7 @@ from aiogram.types import (
     Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
+    WebAppInfo,
 )
 from dotenv import load_dotenv
 
@@ -23,6 +24,7 @@ from bot.services import auth_api, images_api, lessons_api  # после load_do
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
+SITE_URL = os.getenv("SITE_URL", "")
 
 # telegram_id -> {"username", "token", "user_id", "step", "history"}
 sessions: dict[int, dict] = {}
@@ -78,7 +80,7 @@ async def start(message: Message, state: FSMContext):
     await message.answer(
         "Сәләм! Я бот для изучения башкирского языка.\n\n"
         "Пользуйся кнопками внизу или командами:\n"
-        "/register, /login, /me, /task, /history, /logout",
+        "/register, /login, /me, /task, /history, /logout, /site",
         reply_markup=main_kb(message.from_user.id),
     )
 
@@ -368,6 +370,18 @@ async def history_nav(callback: CallbackQuery):
 async def noop(callback: CallbackQuery):
     await callback.answer()
 
+@dp.message(Command("site"))
+async def site(message: Message):
+    if not SITE_URL.startswith("https://"):
+        await message.answer("Адрес сайта не настроен (нужен https в SITE_URL).")
+        return
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="🌐 Открыть приложение", web_app=WebAppInfo(url=SITE_URL))
+    ]])
+    await message.answer(
+        "Нажми кнопку ниже, чтобы открыть приложение.",
+        reply_markup=kb,
+    )
 
 # ---------- запуск ----------
 async def main():
